@@ -1,0 +1,121 @@
+FILENAME REFFILE '/folders/myfolders/Retail_Hist_1.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV replace 
+	OUT=RETAIL1;
+	GETNAMES=YES;
+	Guessingrows=1000;
+RUN;
+
+
+proc report data=retail1(obs=1000);
+columns UnitPrice description country;
+define UnitPrice/display left;
+define description/display center;
+define country/group ;
+quit;
+
+proc freq data=;
+
+
+##use case example for class 10-03-2019
+proc report data=retail1(where=(datereceived >'01FEB2019'd));
+columns state datareceived;
+define state/group center;
+define datereceived/N ;
+quit;
+
+
+
+
+proc report data=retail1(obs=1000);
+columns UnitPrice description country;
+define UnitPrice/display left;
+define description/display center;
+define country/group ;
+quit;
+
+
+proc report data=retail1(obs=1000);
+columns UnitPrice description country;
+define UnitPrice/display left;
+define description/display center;
+define country/order ;
+quit;
+
+proc report data=retail1(obs=1000);
+columns country quantity;
+define country/group ;
+define quantity/sum ;
+quit;
+
+proc report data=retail1(obs=1000);
+columns country quantity new;
+define country/group ;
+define quantity/display ;
+define new/computed;
+compute new;
+new=quantity*2;
+endcomp;
+quit;
+
+
+###Macros, it is a Text substitution and only varchar it supports
+%put _ALL_;
+%put _user_;
+%put _automatic_;
+
+data example;
+set retail1(keep=customerid country);
+country=compress(country);
+if country ne '';
+if customerid ne .;
+run;
+
+proc sort data=example(keep=customerid country) out=example1 nodupkey;
+by customerid country;
+quit;
+
+proc freq data=example1;
+tables country;
+quit;
+
+
+proc report data=example1;
+columns country customerid;
+define country/group ;
+define customerid/display ;
+quit;
+
+
+proc report data=example1;
+columns country customerid;
+define country/group ;
+define customerid/n ;
+quit;
+
+proc sql;
+create table t1 as select country,count(distinct(customerid)) from retail1 group by country;
+quit;
+
+proc print data=t1(obs=10);
+run;
+
+/*below code not giving result  */
+data example2;
+set retail1(keep=unitprice country quantity);
+country=compress(country);
+if country ne '';
+run;
+
+proc report data=example2(obs=100);
+columns country sales;
+define country/group ;
+define quantity/group ;
+define unitprice/group ;
+define sales/computed;
+compute sales;
+sales=quantity*unitprice;
+endcomp;
+quit;
+/*  */

@@ -1,0 +1,112 @@
+/* Generated Code (IMPORT) */
+/* Source File: Train_UWu5bXk.csv */
+/* Source Path: /folders/myfolders/sasuser.v94 */
+/* Code generated on: 2/24/19, 4:15 PM */
+
+%web_drop_table(WORK.IMPORT);
+
+
+FILENAME REFFILE '/folders/myfolders/sasuser.v94/Train_UWu5bXk.csv';
+ 
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=WORK.IMPORT;
+	GETNAMES=YES;
+RUN;
+
+PROC PRINT DATA=WORK.IMPORT(obs=10); RUN;
+
+PROC SORT DATA=WORK.IMPORT out=test; by descending Item_Identifier; RUN;
+
+Data Report1;
+set work.import;
+if Outlet_establishment_Year GT 2000;
+run;
+
+Data Report2;
+set work.import;
+if Outlet_establishment_Year GT 2000 then flag=1;
+run;
+
+PROC SORT DATA=WORK.IMPORT out=test2; by descending Item_Weight; RUN;
+
+Data Report3;
+set work.test2(obs=10);
+run;
+
+proc means DATA=WORK.IMPORT;
+var  item_weight;
+RUN;
+ 
+ data report4;
+ set work.import;
+ where item_weight between 12.8576452 and 21.3500000;
+ run;
+ 
+ data r1 r2;
+ set work.import;
+ if item_weight le 6 then output r1;
+ else output r2;
+ run;
+ 
+proc sql;
+create table tet as select * from work.import;
+select * from tet where item_weight<=5;
+quit;
+
+
+
+%web_open_table(WORK.IMPORT);
+-----------------------------------------------------
+/* Generated Code (IMPORT) */
+/* Source File: Test_u94Q5KV.csv */
+/* Source Path: /folders/myfolders/sasuser.v94 */
+/* Code generated on: 2/24/19, 5:55 PM */
+
+%web_drop_table(WORK.IMPORT1);
+
+
+FILENAME REFFILE '/folders/myfolders/sasuser.v94/Test_u94Q5KV.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=WORK.IMPORT1;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=WORK.IMPORT1; RUN;
+
+proc means DATA=WORK.IMPORT;
+RUN;
+proc means DATA=WORK.IMPORT1;
+RUN;
+
+data onetoone;
+set work.import;
+set work.import1;
+run;
+
+data Append;
+set work.import work.import1;
+run;
+
+PROC SORT DATA=WORK.IMPORT; by  Item_Weight;
+PROC SORT DATA=WORK.IMPORT1; by  Item_Weight;
+
+data Inter_Leaving;
+set work.import work.import1;
+by Item_Weight;
+run;
+
+data match_merge;
+merge work.import(in=a) import1(in=b);
+by item_weight;
+if a=1 and b=1;
+if a=1 and b=0;
+if a=0 and b=1;
+run;
+
+proc sql;
+create table match as select a.*,b.* from work.import a inner join work.import1 b on (a.item_weight=b.item_weight);
+quit;
+%web_open_table(WORK.IMPORT1);

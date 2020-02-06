@@ -1,0 +1,36 @@
+
+*****Please refer uoting pdf and use cases shared in drive****
+
+FILENAME REFFILE '/folders/myfolders/sasuser.v94/ConsumerComplaints_Master.csv';
+PROC IMPORT DATAFILE=REFFILE
+	 DBMS=CSV replace
+	OUT=SAAS_USE_CASE;
+	GETNAMES=YES;
+	GUESSINGROWS=max;
+RUN;
+
+PROC CONTENTS DATA=WORK.IMPORT; RUN;
+
+proc sql;
+select state_name,count(date_received) from saas_use_Case group by 
+state_name ;
+quit;
+
+proc report data=saas_use_case(where=(date_received < '01FEB2019'd)) out=test;
+columns state_name date_received;
+define state_name/group center;
+define date_received/across ;
+
+quit;
+
+
+proc report data=saas_use_case;
+columns  state_name date_received Resolved;
+define Resolved/computed;
+compute Resolved;
+if date_received le '03MAR2019'd and ge '03MAR2019'd-30 ;
+Resolved=1;
+endcomp;
+quit;
+
+

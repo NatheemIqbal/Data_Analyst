@@ -1,0 +1,368 @@
+##Macro
+/* Example-1 */
+
+OPTIONS
+MPRINT
+MLOGIC
+SYMBOLGEN;
+%LET make_name = 'Audi';
+%LET type_name = 'Sports';
+proc print data = sashelp.cars;
+where make = &make_name and type = &type_name ;
+ TITLE "Sales as of &SYSDAY &SYSDATE";
+run;
+------------------------------------------------------------------------
+/* Example-2 */
+
+%MACRO show_result(make, type);
+proc print data = sashelp.cars;
+where make = "&make" and type = "&type" ;
+TITLE "Sales as of &SYSDAY &SYSDATE";
+run;
+%MEND;
+
+%show_result(Audi,Sedan);
+------------------------------------------------------------------------
+/* Example-3 */
+/*if we use _null_ then data  set wont be created */
+data _null_;
+CALL SYMPUT ('today',
+TRIM(PUT("&sysdate"d,worddate22.)));
+run;
+/*The below put and today can be called anywhere as the above code is compiled  */
+%put &today;
+------------------------------------------------------------------------
+/* Example-4 */
+
+%macro test(finish);
+   %let i = 1;
+   %do %while (&i <&finish);
+      %put the value of i is &i;
+      %let i=%eval(&i+2);
+   %end;
+%mend test;
+%test(15)
+------------------------------------------------------------------------
+/* Example-5 */
+
+options mindelimiter=,;
+options minoperator;
+%MACRO test();
+%DO i = 1 %to 9 ;
+%if &i in (1,3,5,7,9) %then %do;%PUT i = &i - odd;
+%END;
+%ELSE %DO;%PUT i = &i - even;
+%end;
+%end;%MEND;
+%test();
+------------------------------------------------------------------------
+/* Example-6 */
+
+/* Compute Setosa mean length and width and save in a dataset */
+proc means data=sashelp.iris mean noprint;
+   where Species='Setosa';
+   var SepalLength SepalWidth;
+   output out=Stats(where=(_STAT_='MEAN'));
+run;
+ 
+/* Print the output dataset */
+proc print data=Stats;
+run;
+
+/* Save relevant statistics in macro variables */
+data _null_;
+   set Stats;
+   call symputx('MeanLength', SepalLength);
+   call symputx('MeanWidth', SepalWidth);
+run;
+
+/* Plot scatterplot of Setosa length against width with reflines using calculated statistics */
+title 'Sepal Length and Width Scatter Plot';
+title2 'With Dynamic Reflines';
+proc sgplot data=sashelp.iris;
+   where Species='Setosa';
+   scatter x=SepalWidth y=SepalLength / markerattrs=(symbol=circlefilled);
+   refline &MeanLength / axis=y lineattrs=(color=red) label="&MeanLength mm" labelattrs=(color=red);
+   refline &MeanWidth / axis=x lineattrs=(color=red) label="&MeanWidth mm" labelattrs=(color=red);
+run;
+title;
+/*example 6.1: below is taking correlation  */
+proc corr data=sashelp.iris;
+where Species='Setosa';
+   var SepalLength SepalWidth;
+------------------------------------------------------------------------
+/* Example-7*/
+%let x = 10;
+%let y = 20;
+%let z = &x * &y;
+%put &z;
+
+%let z2 = %eval(&x*&y);
+%put &z2;
+
+%let last2 = %sysevalf(4.5+3.2);
+%put &last2;
+
+------------------------------------------------------------------------
+/* Example- 8*/
+
+%let text=foo bar baz;
+%let sub_4_3=%sysfunc(substr(&text, 5, 3));
+%put &sub_4_3;
+
+%put %sysfunc(date(), date9.);
+%let dt3 = %sysfunc(date(),yymmdd10.);
+%put &dt3;
+
+------------------------------------------------------------------------
+/* SAS QUOTING FUNCTIONS */
+
+Cat1: All special characters except the ones in Cat2 and Cat3
+blank ; + - = * / < > ^ | , ~ -- # GE LE EQ OR AND GT LT NE IN ‘’ “”
+
+Cat2: Characters that occur in pair.
+‘ “ ( )
+
+Cat3: Macro triggers
+& %
+
+
+Different functions are required to mask each of these categories of characters.
+
+%STR: Masks Cat1 characters at compile time.
+
+%NRSTR: Masks Cat1 and Cat3 characters at compile time.
+
+%QUOTE: This is a execution time function which masks Cat1 characters at execution time.
+
+%NRQUOTE: Masks Cat1 and Cat3 characters at execution time.
+
+%BQUOTE: Also called “blind Quote” for its extra ability to mask Cat2 or unmatched pair tokens. Masks Cat1 and Cat2 characters at execution time.
+
+%NRBQUOTE: Masks Cat1, Cat2 and Cat3 characters at execution time.
+Now you see why so many functions, each have a work of its own. Everyonez got unique style..!!  J
+
+%UNQUOTE: Works as a cop for the above spoilt youth. This function removes any masking done by each of the above functions
+
+%SUPERQ: This execution time quoting function is a separate monster and works in a way different from all the above functions.
+
+------------------------------------------------------------------------
+/* Example- %STR */
+
+%let myvar=%str(a%’);
+
+%let myvar=%str(title %’’first);
+
+%let myvar=%str(log%(12);
+
+%let myvar=%str(345%));
+
+------------------------------------------------------------------------
+/* Example- %NRSTR*/
+
+%let innocent=%nrstr(I didn%’t do it!);
+%put &innocent;
+
+
+####Proc Sql
+The syntax of PROC SQL SAS:
+---------------------------------------
+
+PROC SQL: calls the SAS SQL procedure
+SELECT: specifies the column(s) (variables) to be selected
+FROM: specifies the table(s) (data sets) to be queried
+WHERE: subsets the data based on a condition
+GROUP BY: classifies the data into groups based on the specified column(s)
+ORDER BY: sorts the resulting rows (observations) by the specified column(s)
+QUIT: ends the PROC SQL procedure.
+---------------------------------------------------------------------------------------------------------------
+PROC SQL;
+DESCRIBE TABLE sashelp.class;
+QUIT;
+---------------------------------------------------------------------------------------------------------------
+PROC SQL;
+CREATE TABLE New_Table LIKE sashelp.class;
+QUIT;
+---------------------------------------------------------------------------------------------------------------
+ 
+---------------------------------------------------------------------------------------------------------------
+/* INSERT DATA INTO TABLE */
+data temp;
+set sashelp.class;
+run;
+
+PROC SQL;
+INSERT INTO temp
+VALUES ("Sam","M",28,75,100)
+VALUES ("Sam2","M",58,55,70);
+QUIT;
+
+PROC SQL;
+INSERT INTO temp (name,sex)
+VALUES ("Sam","M");
+QUIT;
+
+proc print data=temp;run;
+---------------------------------------------------------------------------------------------------------------
+/*  EXAMPLE -1 SELECT & SELECT SPECIFIC ROWS	*/
+
+Proc sql feedback stimer;
+Select * from sashelp.class(obs=2);
+quit;
+
+/*  EXAMPLE -2  SELECT COLUMNS*/
+
+Proc sql feedback stimer ;
+Select * from sashelp.class(obs=2 keep=height);
+quit;
+
+/*  EXAMPLE -3  CREATE TABLES*/
+
+Proc sql feedback stimer;
+create table Eg_3 as Select * from sashelp.class;
+quit;
+
+/*  EXAMPLE -4 CONDITIONAL STATEMENT*/
+
+data classfit_males; 
+ set sashelp.classfit;
+  where sex = 'M';
+run; 
+
+proc sql;
+  select * from classfit_males where sex='M';
+quit;  
+
+/*  EXAMPLE -5 UPDATE THE DATASET*/
+
+proc sql;
+ create table class_heights as
+ select name, height as height_inches, (height*2.54) as height_cm from sashelp.class;
+quit;
+
+/*  EXAMPLE -6 CASE STATMENT*/
+ 
+proc sql;
+select *,
+       case when sex='M' then 'Y' 
+        else 'N' end as dummy 
+  from sashelp.class;
+quit;
+
+/*  EXAMPLE -7 CREATING A NEW VARIABLE OF GRAND MEAN*/
+
+data kids;
+  length kidname $ 4 sex $ 1;
+  input famid kidname birth age wt sex ;
+cards;
+1 Beth 1  9  60  f
+1 Bob  2  6  40  m
+1 Barb 3  3  20  f
+2 Andy 1  8  80  m
+2 Al   2  6  50  m
+2 Ann  3  2  20  f
+3 Pete 1  6  60  m
+3 Pam  2  4  40  f
+3 Phil 3  2  20  m
+;
+run;
+proc sql; 
+  create table kids1 as
+  select *,  mean(age) as mean_age 
+  from kids;
+quit;
+
+proc print data=kids1 noobs;
+run;
+
+/*  EXAMPLE -8 CREATING A NEW VARIABLE OF GROUP MEAN*/
+
+proc sql; 
+  create table kids2 as
+  select *, mean(age)  label="group average"  as  mean_age 
+  from kids
+  group by famid;
+quit;
+
+title 'New Variable of Group Mean';
+proc print data=kids2 noobs;
+run;
+
+title 'Label at Work';
+proc freq data=kids2;
+  table mean_age;
+run;
+
+/*  EXAMPLE -9 CREATING MULTIPLE VARIABLES OF SUMMARY STATISTICS AT ONCE*/
+
+proc sql;
+  create table kids3 as
+  select famid, mean(age) as mean_age , std(age) as std_age, 
+         mean(wt) as mean_wt, std(wt) as std_wt from kids
+  group by famid;
+quit;
+proc print data=kids3 noobs;
+run;
+
+proc sql;
+  select famid, mean(age) as mean_age, std(age) as std_age, 
+         mean(wt) as mean_wt, std(wt) as std_wt from kids
+  group by famid;
+quit;
+
+/*  EXAMPLE -10 CREATING MULTIPLE SUMMARY STATISTICS VARIABLES IN THE ORIGINAL DATA SET*/
+
+proc sql;
+  create table fam5 as
+  select *, mean(age) as mean_age, std(age) as std_age, 
+         mean(wt) as mean_wt, std(wt) as std_wt from kids
+  group by famid
+  order by famid, kidname desc;
+quit;
+proc print data=fam5;
+run;
+
+/*  EXAMPLE -11 HAVING*/
+
+proc sql;
+create table want as
+select *, mean(height) as avg_height
+from sashelp.class
+group by sex
+having height<avg_height;
+quit;
+
+
+/*  EXAMPLE -12 CREATING VARIABLES AND THEIR SUMMARY STATISTICS ON-THE-FLY*/
+
+proc sql;
+  create table my_count as
+  select famid, sum(boy) as num_boy, sum(girl) as num_girl from
+  (select famid, (sex='m') as boy, (sex='f') as girl from kids)
+  group by famid;
+quit;
+proc print data=my_count noobs;
+run;
+
+/*  EXAMPLE -13 CREATING GRAND MEAN AND SAVE IT INTO A SAS MACRO VARIABLE*/
+
+proc sql noprint; 
+   select mean(age) into :meanage from kids;
+quit;
+%put &meanage;
+
+/*  EXAMPLE -14 CREATING GROUP MEANS AND SAVE THEM INTO A SEQUENCE OF SAS MACRO VARIABLES*/
+
+proc sql noprint;  
+   select mean(age) into :meanage1 - :meanage3 from kids
+   group by famid;
+quit;
+%put &meanage1 &meanage2 &meanage3;
+
+
+
+
+
+
+
+

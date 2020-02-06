@@ -1,0 +1,116 @@
+FILENAME REFFILE '/folders/myfolders/Retail_Hist_5.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV replace #####Replace will replace the file  if it already exists with same name
+	OUT=RETAIL5;
+	GETNAMES=YES;
+	Guessingrows=1000;####Asking to consider data type as is for 1000 records
+RUN;
+---------------------------------------------------
+
+
+###The below code create a bucket "all" with filed datatype as file name retail1 so that 
+##it can be mapped to all other files as we found data type dicrepancy in files
+data all;
+set Retail1(obs=0) ;
+run;
+
+
+####Repeat the execution for all files
+proc Append Base=all Data=retail1 force;
+quit;
+
+
+proc print data=all;
+quit;
+
+
+Data char_fn;
+set all;
+sub=substr(country,2,5);
+run;
+proc print data=char_fn(obs=10 keep=sub);
+quit;
+
+Data char_fn;
+set all;
+sub=scan(country,2,'');
+run;
+proc print data=char_fn(obs=10 keep=sub);
+quit;
+
+Data char_Replace;
+set all;
+sub=TRANWRD(country,'Kingdom','west');
+run;
+proc print data=char_Replace(obs=10 keep=sub);
+quit;
+
+Data char_cat;
+set all;
+sub=cat(country,description);
+run;
+proc print data=char_cat(obs=10 keep=sub);
+quit;
+
+Data numb_func;
+set all;
+sub1=int(unitprice);
+run;
+
+Data numb_func;
+set all;
+sub1=int(unitprice);
+run;
+
+Data numb_func;
+set all;
+sub1=floor(unitprice);
+run;
+
+
+Data numb_func;
+set all;
+sub1=ceil(unitprice);
+run;
+
+Data numb_func;
+set all;
+sub1=round(unitprice);
+run;
+
+###Formatting datetimestamp to date
+data date_func;
+format sub date9.;
+set all;
+sub=datepart(invoicedate);
+run;
+
+data date_func;
+format sub1 date9.;
+set all;
+sub1=intnx('MONTH',invoicedate,1);
+run;
+
+##Proc report
+##Proc Means
+##Proc summary
+
+###var is a syntax
+proc means DATA=all;
+var unitprice; 
+QUIT;
+
+proc report DATA=retail1 nowd;
+column unitprice; 
+rebreak after/dol summarize;
+QUIT;
+
+data loop1;
+a=1;b=1;
+do i=1 to 10 by 2;
+c=a+b;
+output;
+end;
+run;
+
